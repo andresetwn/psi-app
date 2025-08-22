@@ -54,7 +54,7 @@ export default function Hero() {
 
         {/* Konten */}
         <motion.div
-          className="relative z-10 flex h-[380px] md:h-[500px] flex-col items-center justify-center px-6 text-center text-white"
+          className="relative z-10 flex h-[380px] md:h-[430px] flex-col items-center justify-center px-6 text-center text-white"
           variants={container}
           viewport={{ once: true }}
         >
