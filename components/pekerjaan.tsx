@@ -15,6 +15,12 @@ type Task = {
   status: Status;
 };
 
+type ProgrammerRow = { bidang: string | null };
+
+function isProgrammerRow(x: unknown): x is ProgrammerRow {
+  return isObject(x) && "bidang" in x;
+}
+
 type AuthUser = { id: number; username: string; email: string };
 function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null;
@@ -47,7 +53,6 @@ function isTask(x: unknown): x is Task {
     statusOk
   );
 }
-
 function readUser(): AuthUser | null {
   try {
     const raw =
@@ -67,7 +72,6 @@ function readUser(): AuthUser | null {
     return null;
   }
 }
-
 function mustLogin(): boolean {
   const ok = !!readUser();
   if (!ok) alert("Silahkan Masuk Terlebih Dahulu!");
@@ -79,10 +83,9 @@ export default function PekerjaanPage() {
   const [sortBy, setSortBy] = useState<"none" | "priority" | "deadline">(
     "none"
   );
-
   const [items, setItems] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-
+  const [bidangList, setBidangList] = useState<string[]>([]);
   // Tambah
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -92,7 +95,6 @@ export default function PekerjaanPage() {
     prioritas: Prioritas;
     bagian: string;
   }>({ judul: "", tenggat: "", prioritas: "Sedang", bagian: "" });
-
   // Edit
   const [openEdit, setOpenEdit] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
@@ -110,18 +112,16 @@ export default function PekerjaanPage() {
     bagian: "",
     status: "todo",
   });
-
   useEffect(() => {
     void fetchTasks();
+    void fetchBidang();
   }, []);
-
   async function fetchTasks() {
     setLoading(true);
     const { data, error } = await supabase
       .from("pekerjaan")
       .select("id, judul, tenggat, prioritas, bagian, status")
       .order("tenggat", { ascending: true });
-
     if (error) {
       console.error("[supabase] select pekerjaan:", error.message);
       setItems([]);
@@ -133,7 +133,28 @@ export default function PekerjaanPage() {
     }
     setLoading(false);
   }
+async function fetchBidang() {
+  const { data, error } = await supabase.from("programmer").select("bidang");
 
+  if (error) {
+    console.error("[supabase] select programmer.bidang:", error.message);
+    setBidangList([]);
+    return;
+  }
+
+  const rows: ProgrammerRow[] = Array.isArray(data)
+    ? data.filter(isProgrammerRow)
+    : [];
+
+  const arr = rows
+    .map((r) => r.bidang)
+    .filter((v): v is string => typeof v === "string" && v.trim() !== "");
+
+  const uniq = Array.from(new Set(arr.map((v) => v.trim()))).sort((a, b) =>
+    a.localeCompare(b)
+  );
+  setBidangList(uniq);
+}
   async function createTask(e: React.FormEvent) {
     e.preventDefault();
     if (mustLogin()) return;
@@ -150,17 +171,14 @@ export default function PekerjaanPage() {
       },
     ]);
     setSaving(false);
-
     if (error) {
       alert("Gagal menyimpan: " + error.message);
       return;
     }
-
     setOpen(false);
     setForm({ judul: "", tenggat: "", prioritas: "Sedang", bagian: "" });
     await fetchTasks();
   }
-
   function startEdit(t: Task) {
     if (mustLogin()) return;
     setEditId(t.id);
@@ -173,7 +191,6 @@ export default function PekerjaanPage() {
     });
     setOpenEdit(true);
   }
-
   async function updateTask(e: React.FormEvent) {
     e.preventDefault();
     if (mustLogin()) return;
@@ -202,7 +219,6 @@ export default function PekerjaanPage() {
     setEditId(null);
     await fetchTasks();
   }
-
   async function toggleDone(id: number) {
     if (mustLogin()) return;
     const current = items.find((t) => t.id === id);
@@ -221,7 +237,6 @@ export default function PekerjaanPage() {
       prev.map((t) => (t.id === id ? { ...t, status: next } : t))
     );
   }
-
   async function removeTask(id: number) {
     if (mustLogin()) return;
     if (!confirm("Hapus tugas ini?")) return;
@@ -253,7 +268,6 @@ export default function PekerjaanPage() {
     }
     return list;
   }, [items, tab, sortBy]);
-
   const groups = useMemo(() => {
     const m = new Map<string, Task[]>();
     for (const t of filtered) {
@@ -263,7 +277,6 @@ export default function PekerjaanPage() {
     }
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [filtered]);
-
   return (
     <section className="mx-auto max-w-6xl p-4">
       <div className="mb-4 flex items-center justify-between py-8">
@@ -278,7 +291,6 @@ export default function PekerjaanPage() {
           Tugas Baru
         </button>
       </div>
-
       <div className="border-b">
         <div className="flex gap-6">
           <Tab active={tab === "all"} onClick={() => setTab("all")}>
@@ -295,7 +307,6 @@ export default function PekerjaanPage() {
           </Tab>
         </div>
       </div>
-
       <div className="mt-5">
         <p className="mb-2 text-sm font-medium text-gray-700">
           Urut Berdasarkan
@@ -318,7 +329,6 @@ export default function PekerjaanPage() {
           </Chip>
         </div>
       </div>
-
       {loading ? (
         <p className="mt-6 text-sm text-gray-500">Memuat…</p>
       ) : groups.length === 0 ? (
@@ -368,7 +378,6 @@ export default function PekerjaanPage() {
                         <div className="h-3.5 w-3.5 rounded-full border-2 border-gray-300" />
                       )}
                     </button>
-
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-gray-900">
                         {t.judul}
@@ -401,7 +410,6 @@ export default function PekerjaanPage() {
           ))}
         </div>
       )}
-
       {/* Modal Tambah */}
       {open && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
@@ -415,7 +423,6 @@ export default function PekerjaanPage() {
                 ✕
               </button>
             </div>
-
             <form onSubmit={createTask} className="space-y-3">
               <FieldText
                 label="Judul"
@@ -438,13 +445,21 @@ export default function PekerjaanPage() {
                   options={["Rendah", "Sedang", "Tinggi"]}
                 />
               </div>
-              <FieldText
-                label="Bagian"
-                value={form.bagian}
-                onChange={(v) => setForm((f) => ({ ...f, bagian: v }))}
-                placeholder="Contoh: Web Development, DevOps"
-              />
-
+              {bidangList.length > 0 ? (
+                <FieldSelect
+                  label="Bagian"
+                  value={form.bagian}
+                  onChange={(v) => setForm((f) => ({ ...f, bagian: v }))}
+                  options={[["", "Pilih bidang"], ...bidangList]}
+                />
+              ) : (
+                <FieldText
+                  label="Bagian"
+                  value={form.bagian}
+                  onChange={(v) => setForm((f) => ({ ...f, bagian: v }))}
+                  placeholder="Contoh: Web Development, DevOps"
+                />
+              )}
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   type="button"
@@ -465,7 +480,6 @@ export default function PekerjaanPage() {
           </div>
         </div>
       )}
-
       {/* Modal Ubah */}
       {openEdit && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
@@ -501,11 +515,20 @@ export default function PekerjaanPage() {
                   options={["Rendah", "Sedang", "Tinggi"]}
                 />
               </div>
-              <FieldText
-                label="Bagian"
-                value={editForm.bagian}
-                onChange={(v) => setEditForm((f) => ({ ...f, bagian: v }))}
-              />
+              {bidangList.length > 0 ? (
+                <FieldSelect
+                  label="Bagian"
+                  value={editForm.bagian}
+                  onChange={(v) => setEditForm((f) => ({ ...f, bagian: v }))}
+                  options={[["", "Pilih bidang"], ...bidangList]}
+                />
+              ) : (
+                <FieldText
+                  label="Bagian"
+                  value={editForm.bagian}
+                  onChange={(v) => setEditForm((f) => ({ ...f, bagian: v }))}
+                />
+              )}
               <FieldSelect
                 label="Status"
                 value={editForm.status}
@@ -518,7 +541,6 @@ export default function PekerjaanPage() {
                   ["done", "Selesai"],
                 ]}
               />
-
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   type="button"
@@ -612,7 +634,6 @@ function FieldText({
     </div>
   );
 }
-
 function FieldDate({
   label,
   value,
