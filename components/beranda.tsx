@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import type { Variants, Transition } from "framer-motion";
 
 const springTrans: Transition = { type: "spring", stiffness: 260, damping: 24 };
-
 const container: Variants = {
   hidden: { opacity: 0 },
   show: {
@@ -48,11 +47,7 @@ export default function Hero() {
             className="object-cover"
           />
         </motion.div>
-
-        {/* Overlay */}
         <div className="absolute inset-0 bg-black/40" />
-
-        {/* Konten */}
         <motion.div
           className="relative z-10 flex h-[380px] md:h-[430px] flex-col items-center justify-center px-6 text-center text-white"
           variants={container}
@@ -62,7 +57,6 @@ export default function Hero() {
             className="mb-4 text-3xl font-extrabold md:text-5xl"
             variants={itemUp}
           >
-            {/* Teks bergerak naik-turun terus menerus */}
             <motion.span
               className="inline-block"
               animate={{ y: [0, -10, 0] }}

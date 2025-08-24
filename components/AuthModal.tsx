@@ -1,4 +1,3 @@
-// src/components/AuthModal.tsx
 "use client";
 
 import { useState } from "react";
@@ -24,7 +23,6 @@ function isApiError(v: unknown): v is ApiError {
   const errVal = v["error"];
   return typeof errVal === "string";
 }
-
 export default function AuthModal({
   open,
   onClose,
@@ -41,12 +39,10 @@ export default function AuthModal({
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
-
-  // form state
-  const [identifier, setIdentifier] = useState(""); // email/username saat masuk
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState(""); // untuk daftar
-  const [email, setEmail] = useState(""); // untuk daftar
+  const [username, setUsername] = useState(""); 
+  const [email, setEmail] = useState(""); 
 
   if (!open) return null;
 
@@ -152,7 +148,6 @@ export default function AuthModal({
         <h2 className="mb-6 text-3xl md:text-4xl font-extrabold text-gray-800 text-center">
           {heading}
         </h2>
-
         {mode === "masuk" ? (
           <form onSubmit={handleSignIn} className="space-y-4">
             <label className="block">
